@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Student - Smart Attendance System{% endblock %}
+{% block page_title %}Edit Student Information{% endblock %}
+
+{% block content %}
+<div class="form-page-container">
+    <div class="card form-card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-user-pen"></i>
+                <div>
+                    <h3>Edit Student Profile: {{ student['name'] }}</h3>
+                    <p class="card-subtitle">Update record in SQLite database</p>
+                </div>
+            </div>
+            <a href="{{ url_for('student_records') }}" class="btn btn-sm btn-outline">
+                <i class="fa-solid fa-arrow-left"></i> Cancel & Return
+            </a>
+        </div>
+
+        <div class="card-body">
+            <form action="{{ url_for('edit_student', id=student['id']) }}" method="POST" enctype="multipart/form-data" class="app-form">
+                <div class="form-grid">
+                    <!-- Name -->
+                    <div class="form-group">
+                        <label for="name" class="form-label required">Student Name</label>
+                        <input type="text" id="name" name="name" value="{{ student['name'] }}" class="form-control" required>
+                    </div>
+
+                    <!-- Roll Number -->
+                    <div class="form-group">
+                        <label for="roll_number" class="form-label required">Roll Number</label>
+                        <input type="text" id="roll_number" name="roll_number" value="{{ student['roll_number'] }}" class="form-control" required>
+                    </div>
+
+                    <!-- Seat Number -->
+                    <div class="form-group">
+                        <label for="seat_number" class="form-label required">Seat Number</label>
+                        <input type="text" id="seat_number" name="seat_number" value="{{ student['seat_number'] }}" class="form-control" required>
+                    </div>
+
+                    <!-- Class -->
+                    <div class="form-group">
+                        <label for="class" class="form-label required">Class</label>
+                        <select id="class" name="class" class="form-control" required>
+                            <option value="TYBSC-CS" {% if student['class'] == 'TYBSC-CS' %}selected{% endif %}>TY BSc Computer Science (TYBSC-CS)</option>
+                            <option value="SYBSC-CS" {% if student['class'] == 'SYBSC-CS' %}selected{% endif %}>SY BSc Computer Science (SYBSC-CS)</option>
+                            <option value="FYBSC-CS" {% if student['class'] == 'FYBSC-CS' %}selected{% endif %}>FY BSc Computer Science (FYBSC-CS)</option>
+                            <option value="TYBSC-IT" {% if student['class'] == 'TYBSC-IT' %}selected{% endif %}>TY BSc Information Technology</option>
+                        </select>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="email" class="form-label required">Email Address</label>
+                        <input type="email" id="email" name="email" value="{{ student['email'] }}" class="form-control" required>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="form-group">
+                        <label for="phone" class="form-label required">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" value="{{ student['phone'] }}" class="form-control" required>
+                    </div>
+
+                    <!-- Photo Upload -->
+                    <div class="form-group col-span-2">
+                        <label class="form-label">Update Student Photo</label>
+                        <div class="photo-dropzone">
+                            <div class="current-photo-box">
+                                <span class="text-xs text-muted block mb-1">Current:</span>
+                                <div class="table-avatar">
+                                    {% if student['photo'] and student['photo'] != 'default_avatar.png' %}
+                                        <img src="{{ url_for('static', filename='uploads/' + student['photo']) }}" alt="{{ student['name'] }}" onerror="this.src='https://ui-avatars.com/api/?name={{ student['name'] }}&background=0284c7&color=fff'">
+                                    {% else %}
+                                        <div class="avatar-fallback">{{ student['name'][0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="photo-inputs">
+                                <input type="file" id="photo" name="photo" accept="image/*" class="file-input">
+                                <label for="photo" class="btn btn-outline btn-sm">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> Select New Image File
+                                </label>
+                                <small class="text-muted block mt-1">Leave blank to retain current photo.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-warning btn-lg">
+                        <i class="fa-solid fa-check"></i> Update Record in SQLite
+                    </button>
+                    <a href="{{ url_for('student_records') }}" class="btn btn-secondary btn-lg">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}View Student Profile - Smart Attendance System{% endblock %}
+{% block page_title %}Student Profile & Attendance History{% endblock %}
+
+{% block content %}
+<div class="view-student-container">
+    <div class="view-student-grid">
+        <!-- Left: Student Info Card -->
+        <div class="card student-id-card">
+            <div class="id-card-header">
+                <div class="college-logo-mini">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>COLLEGE ID CARD</span>
+                </div>
+            </div>
+            <div class="id-card-body">
+                <div class="id-avatar-wrap">
+                    {% if student['photo'] and student['photo'] != 'default_avatar.png' %}
+                        <img src="{{ url_for('static', filename='uploads/' + student['photo']) }}" alt="{{ student['name'] }}" onerror="this.src='https://ui-avatars.com/api/?name={{ student['name'] }}&background=0284c7&color=fff'">
+                    {% else %}
+                        <div class="large-avatar-fallback">{{ student['name'][0] }}</div>
+                    {% endif %}
+                </div>
+                <h3>{{ student['name'] }}</h3>
+                <span class="id-class-badge">{{ student['class'] }}</span>
+
+                <div class="id-details-list">
+                    <div class="id-row">
+                        <span>Roll Number:</span>
+                        <strong>{{ student['roll_number'] }}</strong>
+                    </div>
+                    <div class="id-row">
+                        <span>Seat Number:</span>
+                        <strong>{{ student['seat_number'] }}</strong>
+                    </div>
+                    <div class="id-row">
+                        <span>Email:</span>
+                        <small>{{ student['email'] }}</small>
+                    </div>
+                    <div class="id-row">
+                        <span>Phone:</span>
+                        <strong>{{ student['phone'] }}</strong>
+                    </div>
+                    <div class="id-row">
+                        <span>Registered On:</span>
+                        <small>{{ student['created_at'] }}</small>
+                    </div>
+                </div>
+
+                <div class="id-card-actions">
+                    <a href="{{ url_for('edit_student', id=student['id']) }}" class="btn btn-warning btn-block">
+                        <i class="fa-solid fa-pen-to-square"></i> Edit Student Details
+                    </a>
+                    <a href="{{ url_for('student_records') }}" class="btn btn-outline btn-block mt-2">
+                        <i class="fa-solid fa-arrow-left"></i> Back to Directory
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Attendance Performance Stats & Logs -->
+        <div class="student-stats-column">
+            <!-- Metric Cards -->
+            <div class="stats-grid-mini">
+                <div class="stat-mini-card">
+                    <span class="lbl">Total Sessions</span>
+                    <h4>{{ total_sessions }}</h4>
+                </div>
+                <div class="stat-mini-card">
+                    <span class="lbl text-success">Present</span>
+                    <h4 class="text-success">{{ present_sessions }}</h4>
+                </div>
+                <div class="stat-mini-card">
+                    <span class="lbl text-danger">Absent</span>
+                    <h4 class="text-danger">{{ absent_sessions }}</h4>
+                </div>
+                <div class="stat-mini-card">
+                    <span class="lbl">Attendance %</span>
+                    <h4 class="{% if percentage >= 75 %}text-success{% else %}text-danger{% endif %}">{{ percentage }}%</h4>
+                </div>
+            </div>
+
+            {% if percentage < 75.0 and total_sessions > 0 %}
+            <div class="alert-banner-warning">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <div>
+                    <strong>Low Attendance Notice:</strong> This student's attendance is {{ percentage }}%, which is below the minimum mandatory requirement of 75%.
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Attendance History Table -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fa-solid fa-history"></i>
+                        <h3>Individual Attendance Audit Trail</h3>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Marked By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if history %}
+                                {% for h in history %}
+                                <tr>
+                                    <td><strong>{{ h['date'] }}</strong></td>
+                                    <td>{{ h['time'] }}</td>
+                                    <td>
+                                        {% if h['status'] == 'Present' %}
+                                            <span class="status-badge badge-present"><i class="fa-solid fa-check"></i> Present</span>
+                                        {% else %}
+                                            <span class="status-badge badge-absent"><i class="fa-solid fa-xmark"></i> Absent</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ h['marked_by'] }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">No attendance sessions recorded for this student yet.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

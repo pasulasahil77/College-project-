@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Attendance - Smart Attendance System{% endblock %}
+{% block page_title %}Mark Daily Attendance{% endblock %}
+
+{% block content %}
+<div class="attendance-page-container">
+    <div class="card">
+        <div class="card-header attendance-toolbar">
+            <div class="card-title">
+                <i class="fa-solid fa-clipboard-user"></i>
+                <div>
+                    <h3>Daily Roll Call</h3>
+                    <p class="card-subtitle">Mark present or absent status for each registered student</p>
+                </div>
+            </div>
+
+            <!-- Date Selector form -->
+            <form action="{{ url_for('mark_attendance') }}" method="GET" class="date-picker-form">
+                <label for="dateSelect"><i class="fa-regular fa-calendar"></i> Lecture Date:</label>
+                <input type="date" id="dateSelect" name="date" value="{{ selected_date }}" class="form-control date-input" onchange="this.form.submit()">
+            </form>
+        </div>
+
+        <div class="card-body">
+            <!-- Controls Bar: Mark All & Counters -->
+            <div class="attendance-control-bar">
+                <div class="batch-buttons">
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="markAllStatus('Present')">
+                        <i class="fa-solid fa-check-double"></i> Mark All Present
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="markAllStatus('Absent')">
+                        <i class="fa-solid fa-xmark"></i> Mark All Absent
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="invertStatus()">
+                        <i class="fa-solid fa-shuffle"></i> Invert
+                    </button>
+                </div>
+
+                <div class="live-counter-chips">
+                    <span class="chip chip-total">Total: <strong id="totalCount">{{ students|length }}</strong></span>
+                    <span class="chip chip-present">Present: <strong id="livePresentCount">0</strong></span>
+                    <span class="chip chip-absent">Absent: <strong id="liveAbsentCount">0</strong></span>
+                </div>
+            </div>
+
+            <!-- Attendance Form -->
+            <form action="{{ url_for('mark_attendance') }}" method="POST" id="attendanceForm">
+                <input type="hidden" name="date" value="{{ selected_date }}">
+
+                <div class="table-responsive">
+                    <table class="data-table attendance-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">#</th>
+                                <th style="width: 80px;">Photo</th>
+                                <th>Student Details</th>
+                                <th>Roll Number</th>
+                                <th>Seat Number</th>
+                                <th>Class</th>
+                                <th style="width: 220px;" class="text-center">Attendance Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if students %}
+                                {% for s in students %}
+                                {% set default_status = s['current_status'] if s['current_status'] else 'Present' %}
+                                <tr class="student-row" id="row_{{ s['id'] }}">
+                                    <td>{{ loop.index }}</td>
+                                    <td>
+                                        <div class="table-avatar">
+                                            {% if s['photo'] and s['photo'] != 'default_avatar.png' %}
+                                                <img src="{{ url_for('static', filename='uploads/' + s['photo']) }}" alt="{{ s['name'] }}" onerror="this.src='https://ui-avatars.com/api/?name={{ s['name'] }}&background=0284c7&color=fff'">
+                                            {% else %}
+                                                <div class="avatar-fallback">{{ s['name'][0] }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="student-name-box">
+                                            <strong>{{ s['name'] }}</strong>
+                                            {% if s['current_status'] %}
+                                                <small class="recorded-hint"><i class="fa-solid fa-clock"></i> Logged at {{ s['recorded_time'] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td><span class="tag-code">{{ s['roll_number'] }}</span></td>
+                                    <td><span class="tag-code-alt">{{ s['seat_number'] }}</span></td>
+                                    <td>{{ s['class'] }}</td>
+                                    <td class="text-center">
+                                        <div class="status-toggle-group">
+                                            <label class="toggle-option present-option">
+                                                <input type="radio" name="status_{{ s['id'] }}" value="Present" {% if default_status == 'Present' %}checked{% endif %} onchange="updateCounters()">
+                                                <span class="toggle-btn"><i class="fa-solid fa-check"></i> Present</span>
+                                            </label>
+                                            <label class="toggle-option absent-option">
+                                                <input type="radio" name="status_{{ s['id'] }}" value="Absent" {% if default_status == 'Absent' %}checked{% endif %} onchange="updateCounters()">
+                                                <span class="toggle-btn"><i class="fa-solid fa-xmark"></i> Absent</span>
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="fa-solid fa-user-slash fa-2x mb-2"></i>
+                                        <p>No registered students found.</p>
+                                        <a href="{{ url_for('register_student') }}" class="btn btn-sm btn-primary">Register Students First</a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if students %}
+                <div class="attendance-submit-bar">
+                    <div class="timestamp-indicator">
+                        <i class="fa-solid fa-clock"></i> Timestamp will be saved automatically upon submission
+                    </div>
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fa-solid fa-check-circle"></i> Save Attendance to SQLite Database
+                    </button>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function updateCounters() {
+    const presentRadios = document.querySelectorAll('input[type="radio"][value="Present"]:checked');
+    const absentRadios = document.querySelectorAll('input[type="radio"][value="Absent"]:checked');
+    
+    document.getElementById('livePresentCount').textContent = presentRadios.length;
+    document.getElementById('liveAbsentCount').textContent = absentRadios.length;
+
+    // Highlight row status visually
+    document.querySelectorAll('.student-row').forEach(row => {
+        const id = row.id.replace('row_', '');
+        const isPresent = document.querySelector(`input[name="status_${id}"][value="Present"]`).checked;
+        if (isPresent) {
+            row.classList.remove('row-absent');
+            row.classList.add('row-present');
+        } else {
+            row.classList.remove('row-present');
+            row.classList.add('row-absent');
+        }
+    });
+}
+
+function markAllStatus(status) {
+    document.querySelectorAll(`input[type="radio"][value="${status}"]`).forEach(radio => {
+        radio.checked = true;
+    });
+    updateCounters();
+}
+
+function invertStatus() {
+    document.querySelectorAll('.student-row').forEach(row => {
+        const id = row.id.replace('row_', '');
+        const presentRadio = document.querySelector(`input[name="status_${id}"][value="Present"]`);
+        const absentRadio = document.querySelector(`input[name="status_${id}"][value="Absent"]`);
+        if (presentRadio && absentRadio) {
+            if (presentRadio.checked) {
+                absentRadio.checked = true;
+            } else {
+                presentRadio.checked = true;
+            }
+        }
+    });
+    updateCounters();
+}
+
+document.addEventListener('DOMContentLoaded', updateCounters);
+</script>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Student Registration - Smart Attendance System{% endblock %}
+{% block page_title %}Student Registration{% endblock %}
+
+{% block content %}
+<div class="form-page-container">
+    <div class="card form-card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-user-plus"></i>
+                <div>
+                    <h3>Register New Student</h3>
+                    <p class="card-subtitle">Add a new student profile to the SQLite database records</p>
+                </div>
+            </div>
+            <a href="{{ url_for('student_records') }}" class="btn btn-sm btn-outline">
+                <i class="fa-solid fa-arrow-left"></i> Back to Student List
+            </a>
+        </div>
+
+        <div class="card-body">
+            <form action="{{ url_for('register_student') }}" method="POST" enctype="multipart/form-data" class="app-form" id="registrationForm">
+                <div class="form-grid">
+                    <!-- 1. Student Name -->
+                    <div class="form-group">
+                        <label for="name" class="form-label required">
+                            <i class="fa-solid fa-user"></i> Full Student Name
+                        </label>
+                        <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Rahul S. Mehta" required>
+                        <small class="form-hint">Enter the full official name as registered on college records.</small>
+                    </div>
+
+                    <!-- 2. Roll Number -->
+                    <div class="form-group">
+                        <label for="roll_number" class="form-label required">
+                            <i class="fa-solid fa-hashtag"></i> Roll Number
+                        </label>
+                        <input type="text" id="roll_number" name="roll_number" class="form-control" placeholder="e.g. TYBSC-A-42" required>
+                        <small class="form-hint">Unique college roll identifier (e.g., TYBSC-A-XX).</small>
+                    </div>
+
+                    <!-- 3. Seat Number -->
+                    <div class="form-group">
+                        <label for="seat_number" class="form-label required">
+                            <i class="fa-solid fa-ticket"></i> Seat Number
+                        </label>
+                        <input type="text" id="seat_number" name="seat_number" class="form-control" placeholder="e.g. 24TCS095" required>
+                        <small class="form-hint">University exam seat number or PRN.</small>
+                    </div>
+
+                    <!-- 4. Class -->
+                    <div class="form-group">
+                        <label for="class" class="form-label required">
+                            <i class="fa-solid fa-school"></i> Class / Division
+                        </label>
+                        <select id="class" name="class" class="form-control" required>
+                            <option value="">-- Select Class --</option>
+                            <option value="TYBSC-CS" selected>TY BSc Computer Science (TYBSC-CS)</option>
+                            <option value="SYBSC-CS">SY BSc Computer Science (SYBSC-CS)</option>
+                            <option value="FYBSC-CS">FY BSc Computer Science (FYBSC-CS)</option>
+                            <option value="TYBSC-IT">TY BSc Information Technology</option>
+                        </select>
+                    </div>
+
+                    <!-- 5. Email Address -->
+                    <div class="form-group">
+                        <label for="email" class="form-label required">
+                            <i class="fa-solid fa-envelope"></i> Email Address
+                        </label>
+                        <input type="email" id="email" name="email" class="form-control" placeholder="student.name@college.edu" required>
+                        <small class="form-hint">Used for low attendance notifications.</small>
+                    </div>
+
+                    <!-- 6. Phone Number -->
+                    <div class="form-group">
+                        <label for="phone" class="form-label required">
+                            <i class="fa-solid fa-phone"></i> Phone Number / WhatsApp
+                        </label>
+                        <input type="tel" id="phone" name="phone" class="form-control" placeholder="+91 98765 43210" required>
+                        <small class="form-hint">Student / Parent primary contact number.</small>
+                    </div>
+
+                    <!-- 7. Photo Upload with Live Preview -->
+                    <div class="form-group col-span-2 photo-upload-container">
+                        <label class="form-label">
+                            <i class="fa-solid fa-camera"></i> Student Photo / Avatar
+                        </label>
+                        <div class="photo-dropzone">
+                            <div class="photo-preview-box" id="photoPreviewBox">
+                                <i class="fa-solid fa-user-circle placeholder-icon" id="previewPlaceholder"></i>
+                                <img src="" alt="Student Preview" id="imagePreview" class="hidden">
+                            </div>
+                            <div class="photo-inputs">
+                                <input type="file" id="photo" name="photo" accept="image/*" class="file-input" onchange="previewStudentPhoto(this)">
+                                <label for="photo" class="btn btn-outline btn-sm">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> Choose Photo
+                                </label>
+                                <span class="file-name-text" id="fileNameDisplay">No photo selected (default avatar will be used)</span>
+                                <small class="text-muted block mt-1">Accepted formats: JPG, PNG, WEBP (Max 2MB)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Student to SQLite
+                    </button>
+                    <button type="reset" class="btn btn-secondary btn-lg" onclick="resetPhotoPreview()">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Form
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function previewStudentPhoto(input) {
+    const file = input.files[0];
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewPlaceholder = document.getElementById('previewPlaceholder');
+
+    if (file) {
+        fileNameDisplay.textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imagePreview.src = e.target.result;
+            imagePreview.classList.remove('hidden');
+            previewPlaceholder.classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function resetPhotoPreview() {
+    document.getElementById('fileNameDisplay').textContent = 'No photo selected (default avatar will be used)';
+    const imagePreview = document.getElementById('imagePreview');
+    const previewPlaceholder = document.getElementById('previewPlaceholder');
+    imagePreview.src = '';
+    imagePreview.classList.add('hidden');
+    previewPlaceholder.classList.remove('hidden');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Student Records - Smart Attendance System{% endblock %}
+{% block page_title %}Student Records Management{% endblock %}
+
+{% block content %}
+<div class="students-page-container">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-address-book"></i>
+                <div>
+                    <h3>Registered Students Directory</h3>
+                    <p class="card-subtitle">Stored inside SQLite <code>students</code> table with complete profile details</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="{{ url_for('register_student') }}" class="btn btn-sm btn-primary">
+                    <i class="fa-solid fa-user-plus"></i> Register New Student
+                </a>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Search Toolbar -->
+            <form action="{{ url_for('student_records') }}" method="GET" class="filter-toolbar">
+                <div class="filter-group search-group" style="flex: 1;">
+                    <label for="studentSearch"><i class="fa-solid fa-magnifying-glass"></i> Search Database:</label>
+                    <div class="input-with-button">
+                        <input type="text" id="studentSearch" name="search" value="{{ search }}" class="form-control" placeholder="Search by Student Name, Roll Number, Seat Number or Email...">
+                        <button type="submit" class="btn btn-secondary"><i class="fa-solid fa-search"></i> Search</button>
+                    </div>
+                </div>
+                {% if search %}
+                <div class="filter-clear">
+                    <a href="{{ url_for('student_records') }}" class="btn btn-sm btn-outline-danger">Clear Search</a>
+                </div>
+                {% endif %}
+            </form>
+
+            <!-- Students List Table with View, Edit, Delete -->
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th style="width: 70px;">Photo</th>
+                            <th>Student Name</th>
+                            <th>Roll Number</th>
+                            <th>Seat Number</th>
+                            <th>Class</th>
+                            <th>Contact Info</th>
+                            <th style="width: 200px;" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if students %}
+                            {% for s in students %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>
+                                    <div class="table-avatar">
+                                        {% if s['photo'] and s['photo'] != 'default_avatar.png' %}
+                                            <img src="{{ url_for('static', filename='uploads/' + s['photo']) }}" alt="{{ s['name'] }}" onerror="this.src='https://ui-avatars.com/api/?name={{ s['name'] }}&background=0284c7&color=fff'">
+                                        {% else %}
+                                            <div class="avatar-fallback">{{ s['name'][0] }}</div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>{{ s['name'] }}</strong>
+                                    {% if s['roll_number'] == 'TYBSC-A-39' %}
+                                        <span class="project-lead-badge"><i class="fa-solid fa-star"></i> Lead</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="tag-code">{{ s['roll_number'] }}</span></td>
+                                <td><span class="tag-code-alt">{{ s['seat_number'] }}</span></td>
+                                <td>{{ s['class'] }}</td>
+                                <td>
+                                    <div class="contact-meta">
+                                        <small><i class="fa-solid fa-envelope"></i> {{ s['email'] }}</small>
+                                        <small><i class="fa-solid fa-phone"></i> {{ s['phone'] }}</small>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="action-btn-group">
+                                        <!-- View -->
+                                        <a href="{{ url_for('view_student', id=s['id']) }}" class="btn btn-icon btn-info" title="View Profile & Attendance">
+                                            <i class="fa-solid fa-eye"></i> View
+                                        </a>
+                                        <!-- Edit -->
+                                        <a href="{{ url_for('edit_student', id=s['id']) }}" class="btn btn-icon btn-warning" title="Edit Student">
+                                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                                        </a>
+                                        <!-- Delete -->
+                                        <button type="button" class="btn btn-icon btn-danger" onclick="confirmDeleteStudent({{ s['id'] }}, '{{ s['name'] }}')" title="Delete Student">
+                                            <i class="fa-solid fa-trash-can"></i> Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="fa-solid fa-user-xmark fa-2x mb-2"></i>
+                                    <p>No student records found in the database.</p>
+                                    <a href="{{ url_for('register_student') }}" class="btn btn-sm btn-primary">Register First Student</a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="table-summary-bar">
+                <span>Total Registered Students: <strong>{{ students|length }}</strong></span>
+                <span class="text-muted"><i class="fa-solid fa-check"></i> Actions: View (Profile & Log), Edit (Update), Delete (Cascade delete)</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay hidden" id="deleteModal">
+    <div class="modal-box">
+        <div class="modal-icon-danger">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h3>Confirm Student Deletion</h3>
+        <p>Are you sure you want to delete student <strong id="deleteStudentName"></strong>? All corresponding attendance records in SQLite will also be deleted.</p>
+        <form id="deleteStudentForm" method="POST" action="">
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button type="submit" class="btn btn-danger">Yes, Delete Record</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function confirmDeleteStudent(studentId, studentName) {
+    document.getElementById('deleteStudentName').textContent = studentName;
+    document.getElementById('deleteStudentForm').action = '/students/delete/' + studentId;
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+</script>
+{% endblock %}

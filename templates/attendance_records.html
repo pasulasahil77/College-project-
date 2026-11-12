@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Records - Smart Attendance System{% endblock %}
+{% block page_title %}Attendance History Logs{% endblock %}
+
+{% block content %}
+<div class="records-page-container">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-list-check"></i>
+                <div>
+                    <h3>Attendance Logs & Audit Trail</h3>
+                    <p class="card-subtitle">Complete time-stamped attendance logs stored in SQLite</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button onclick="window.print()" class="btn btn-sm btn-outline">
+                    <i class="fa-solid fa-print"></i> Print Records
+                </button>
+                <a href="{{ url_for('mark_attendance') }}" class="btn btn-sm btn-primary">
+                    <i class="fa-solid fa-plus"></i> Mark New
+                </a>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Filter & Search Toolbar -->
+            <form action="{{ url_for('attendance_records') }}" method="GET" class="filter-toolbar">
+                <div class="filter-group">
+                    <label for="dateFilter"><i class="fa-regular fa-calendar"></i> Filter by Date:</label>
+                    <select id="dateFilter" name="date" class="form-control" onchange="this.form.submit()">
+                        <option value="">-- All Recorded Dates --</option>
+                        {% for d in distinct_dates %}
+                        <option value="{{ d['date'] }}" {% if filter_date == d['date'] %}selected{% endif %}>
+                            {{ d['date'] }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="statusFilter"><i class="fa-solid fa-filter"></i> Status:</label>
+                    <select id="statusFilter" name="status" class="form-control" onchange="this.form.submit()">
+                        <option value="">-- All Statuses --</option>
+                        <option value="Present" {% if filter_status == 'Present' %}selected{% endif %}>Present Only</option>
+                        <option value="Absent" {% if filter_status == 'Absent' %}selected{% endif %}>Absent Only</option>
+                    </select>
+                </div>
+
+                <div class="filter-group search-group">
+                    <label for="searchFilter"><i class="fa-solid fa-magnifying-glass"></i> Search:</label>
+                    <div class="input-with-button">
+                        <input type="text" id="searchFilter" name="search" value="{{ search_query }}" class="form-control" placeholder="Search student name, roll...">
+                        <button type="submit" class="btn btn-secondary"><i class="fa-solid fa-search"></i></button>
+                    </div>
+                </div>
+
+                {% if filter_date or filter_status or search_query %}
+                <div class="filter-clear">
+                    <a href="{{ url_for('attendance_records') }}" class="btn btn-sm btn-outline-danger">
+                        <i class="fa-solid fa-xmark"></i> Clear Filters
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+
+            <!-- Records Table as required by prompt -->
+            <div class="table-responsive">
+                <table class="data-table" id="attendanceRecordsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">#</th>
+                            <th>Student Name</th>
+                            <th>Roll Number</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Marked By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if records %}
+                            {% for r in records %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>
+                                    <div class="cell-student-info">
+                                        <strong>{{ r['name'] }}</strong>
+                                        <small class="text-muted">{{ r['class'] }} &bull; Seat: {{ r['seat_number'] }}</small>
+                                    </div>
+                                </td>
+                                <td><span class="tag-code">{{ r['roll_number'] }}</span></td>
+                                <td><strong>{{ r['date'] }}</strong></td>
+                                <td><span class="tag-time"><i class="fa-regular fa-clock"></i> {{ r['time'] }}</span></td>
+                                <td>
+                                    {% if r['status'] == 'Present' %}
+                                        <span class="status-badge badge-present">
+                                            <i class="fa-solid fa-check"></i> Present
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge badge-absent">
+                                            <i class="fa-solid fa-xmark"></i> Absent
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="text-muted"><i class="fa-solid fa-user-check"></i> {{ r['marked_by'] }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="fa-regular fa-folder-open fa-2x mb-2"></i>
+                                    <p>No attendance records match the selected filter criteria.</p>
+                                    <a href="{{ url_for('attendance_records') }}" class="btn btn-sm btn-outline">Reset Filter</a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-summary-bar">
+                <span>Showing <strong>{{ records|length }}</strong> attendance records</span>
+                <span class="text-muted"><i class="fa-solid fa-shield-halved"></i> Data securely queried from SQLite <code>attendance</code> table</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

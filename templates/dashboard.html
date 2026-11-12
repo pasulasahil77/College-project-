@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Smart Attendance System{% endblock %}
+{% block page_title %}System Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Welcome Banner with Project Info -->
+    <div class="welcome-card">
+        <div class="welcome-text">
+            <h2>Welcome to Smart Attendance Management Portal</h2>
+            <p>
+                A comprehensive college project by <strong>Sahil Pasula</strong> (Roll No: <strong>TYBSC-A-39</strong>, Seat No: <strong>24TCS076</strong>).
+                Record daily attendance, evaluate percentage statistics, and track attendance shortages below 75%.
+            </p>
+        </div>
+        <div class="welcome-actions">
+            <a href="{{ url_for('mark_attendance') }}" class="btn btn-primary">
+                <i class="fa-solid fa-clipboard-check"></i> Mark Today's Attendance
+            </a>
+            <a href="{{ url_for('register_student') }}" class="btn btn-secondary">
+                <i class="fa-solid fa-user-plus"></i> New Student
+            </a>
+        </div>
+    </div>
+
+    <!-- 4 Primary Stat Cards as requested in prompt -->
+    <div class="stats-grid">
+        <!-- 1. Total Students -->
+        <div class="stat-card stat-blue">
+            <div class="stat-icon">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-label">Total Students</span>
+                <h3 class="stat-value">{{ total_students }}</h3>
+                <span class="stat-hint"><i class="fa-solid fa-database"></i> Stored in SQLite</span>
+            </div>
+        </div>
+
+        <!-- 2. Present Today -->
+        <div class="stat-card stat-green">
+            <div class="stat-icon">
+                <i class="fa-solid fa-user-check"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-label">Present Today</span>
+                <h3 class="stat-value">{{ present_today }}</h3>
+                <span class="stat-hint"><i class="fa-solid fa-calendar-day"></i> {{ today_date }}</span>
+            </div>
+        </div>
+
+        <!-- 3. Absent Today -->
+        <div class="stat-card stat-red">
+            <div class="stat-icon">
+                <i class="fa-solid fa-user-xmark"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-label">Absent Today</span>
+                <h3 class="stat-value">{{ absent_today }}</h3>
+                <span class="stat-hint"><i class="fa-solid fa-clock"></i> Daily roll-call status</span>
+            </div>
+        </div>
+
+        <!-- 4. Attendance Percentage -->
+        <div class="stat-card stat-purple">
+            <div class="stat-icon">
+                <i class="fa-solid fa-chart-pie"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-label">Attendance Rate</span>
+                <h3 class="stat-value">{{ attendance_percentage }}%</h3>
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar-fill {% if attendance_percentage >= 75 %}bg-success{% else %}bg-warning{% endif %}" style="width: {{ attendance_percentage }}%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Banner if students have < 75% attendance -->
+    {% if low_attendance_students|length > 0 %}
+    <div class="alert-banner-warning">
+        <div class="warning-header">
+            <div class="warning-title">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <div>
+                    <h4>Mandatory 75% Attendance Shortage Warning</h4>
+                    <p>{{ low_attendance_students|length }} student(s) currently have aggregate attendance below 75%.</p>
+                </div>
+            </div>
+            <a href="{{ url_for('notifications') }}" class="btn btn-sm btn-outline-warning">
+                View All Shortage Alerts <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+        <div class="low-att-pills">
+            {% for s in low_attendance_students %}
+            {% set pct = ((s['present_sessions'] * 100.0) / s['total_sessions'])|round(1) %}
+            <div class="low-att-pill">
+                <strong>{{ s['name'] }}</strong> ({{ s['roll_number'] }}):
+                <span class="danger-badge">{{ pct }}%</span>
+                <small>({{ s['present_sessions'] }}/{{ s['total_sessions'] }} attended)</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 2 Column Layout: Quick Actions & Recent Attendance Activity -->
+    <div class="dashboard-columns">
+        <!-- Left: Recent Attendance Table -->
+        <div class="card col-span-2">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <h3>Recent Attendance Logs</h3>
+                </div>
+                <a href="{{ url_for('attendance_records') }}" class="view-all-link">View All Records <i class="fa-solid fa-chevron-right"></i></a>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Roll No</th>
+                            <th>Class</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if recent_attendance %}
+                            {% for r in recent_attendance %}
+                            <tr>
+                                <td><strong>{{ r['name'] }}</strong></td>
+                                <td><span class="tag-code">{{ r['roll_number'] }}</span></td>
+                                <td>{{ r['class'] }}</td>
+                                <td>{{ r['date'] }}</td>
+                                <td>{{ r['time'] }}</td>
+                                <td>
+                                    {% if r['status'] == 'Present' %}
+                                        <span class="status-badge badge-present"><i class="fa-solid fa-check"></i> Present</span>
+                                    {% else %}
+                                        <span class="status-badge badge-absent"><i class="fa-solid fa-xmark"></i> Absent</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    No attendance recorded yet. <a href="{{ url_for('mark_attendance') }}">Mark attendance now</a>.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Right: Project Specifications for Viva Demo -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-code"></i>
+                    <h3>Project Architecture</h3>
+                </div>
+            </div>
+            <div class="card-body">
+                <ul class="project-spec-list">
+                    <li>
+                        <span class="spec-label"><i class="fa-brands fa-python"></i> Backend:</span>
+                        <span class="spec-val">Python 3 + Flask Framework</span>
+                    </li>
+                    <li>
+                        <span class="spec-label"><i class="fa-solid fa-database"></i> Database:</span>
+                        <span class="spec-val">SQLite3 (<code>smart_attendance.db</code>)</span>
+                    </li>
+                    <li>
+                        <span class="spec-label"><i class="fa-brands fa-html5"></i> Frontend:</span>
+                        <span class="spec-val">HTML5, CSS3, Vanilla JavaScript</span>
+                    </li>
+                    <li>
+                        <span class="spec-label"><i class="fa-solid fa-user-graduate"></i> Student:</span>
+                        <span class="spec-val">Sahil Pasula</span>
+                    </li>
+                    <li>
+                        <span class="spec-label"><i class="fa-solid fa-id-card"></i> Class / Roll:</span>
+                        <span class="spec-val">TYBSC-A-39</span>
+                    </li>
+                    <li>
+                        <span class="spec-label"><i class="fa-solid fa-ticket"></i> Seat Number:</span>
+                        <span class="spec-val">24TCS076</span>
+                    </li>
+                </ul>
+
+                <hr class="card-divider">
+
+                <div class="quick-nav-box">
+                    <span class="box-title">Quick Modules:</span>
+                    <div class="quick-nav-buttons">
+                        <a href="{{ url_for('register_student') }}" class="btn btn-sm btn-outline"><i class="fa-solid fa-plus"></i> Register</a>
+                        <a href="{{ url_for('mark_attendance') }}" class="btn btn-sm btn-outline"><i class="fa-solid fa-pen"></i> Mark Attendance</a>
+                        <a href="{{ url_for('reports') }}" class="btn btn-sm btn-outline"><i class="fa-solid fa-file-lines"></i> Reports</a>
+                        <a href="{{ url_for('student_records') }}" class="btn btn-sm btn-outline"><i class="fa-solid fa-list"></i> Students</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

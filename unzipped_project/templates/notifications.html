@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Warnings (< 75%) - Smart Attendance System{% endblock %}
+{% block page_title %}Low Attendance Warnings & Notifications{% endblock %}
+
+{% block content %}
+<div class="notifications-page-container">
+    <!-- University Attendance Regulation Info Box -->
+    <div class="info-alert-box">
+        <div class="info-icon">
+            <i class="fa-solid fa-scale-balanced"></i>
+        </div>
+        <div class="info-text">
+            <h4>University 75% Attendance Compliance Rule</h4>
+            <p>
+                As per University guidelines, every student must maintain a minimum of <strong>75% attendance</strong> across all theory and practical lectures to be eligible for semester-end examinations. Students below 75% are automatically flagged here for faculty review and parent notification.
+            </p>
+        </div>
+    </div>
+
+    <!-- Active Warning Cards List -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-bell"></i>
+                <div>
+                    <h3>Active Shortage Alerts (< 75%)</h3>
+                    <p class="card-subtitle">Auto-generated warnings from the SQLite <code>notifications</code> table</p>
+                </div>
+            </div>
+            <span class="badge-alert-pill">
+                <i class="fa-solid fa-triangle-exclamation"></i> {{ notifications|length }} Warning(s) Active
+            </span>
+        </div>
+
+        <div class="card-body">
+            {% if notifications %}
+                <div class="notifications-list">
+                    {% for n in notifications %}
+                    <div class="notification-card {% if n['percentage'] < 50 %}severe-alert{% else %}warning-alert{% endif %}">
+                        <div class="notif-avatar-col">
+                            <div class="table-avatar large">
+                                {% if n['photo'] and n['photo'] != 'default_avatar.png' %}
+                                    <img src="{{ url_for('static', filename='uploads/' + n['photo']) }}" alt="{{ n['student_name'] }}" onerror="this.src='https://ui-avatars.com/api/?name={{ n['student_name'] }}&background=ef4444&color=fff'">
+                                {% else %}
+                                    <div class="avatar-fallback red">{{ n['student_name'][0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="notif-percentage-badge">
+                                {{ n['percentage'] }}%
+                            </div>
+                        </div>
+
+                        <div class="notif-details-col">
+                            <div class="notif-top">
+                                <span class="notif-tag">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> Critical Shortage Alert
+                                </span>
+                                <span class="notif-time text-muted"><i class="fa-regular fa-clock"></i> Generated: {{ n['created_at'] }}</span>
+                            </div>
+
+                            <h4 class="notif-student-name">
+                                {{ n['student_name'] }} 
+                                <span class="text-muted">(Roll: {{ n['roll_number'] }} | Seat: {{ n['seat_number'] }} | {{ n['class'] }})</span>
+                            </h4>
+
+                            <p class="notif-message-text">
+                                {{ n['message'] }}
+                            </p>
+
+                            <div class="notif-contact-row">
+                                <span><i class="fa-solid fa-envelope"></i> {{ n['email'] }}</span>
+                                <span><i class="fa-solid fa-phone"></i> {{ n['phone'] }}</span>
+                            </div>
+                        </div>
+
+                        <div class="notif-actions-col">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="triggerParentAlert('{{ n['student_name'] }}', '{{ n['percentage'] }}%', '{{ n['phone'] }}')">
+                                <i class="fa-solid fa-paper-plane"></i> Send SMS/Email
+                            </button>
+                            <a href="{{ url_for('view_student', id=n['student_id']) }}" class="btn btn-sm btn-outline">
+                                <i class="fa-solid fa-eye"></i> View History
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state-box">
+                    <div class="empty-icon text-success">
+                        <i class="fa-solid fa-circle-check fa-3x"></i>
+                    </div>
+                    <h3>No Attendance Shortages</h3>
+                    <p>All registered students currently maintain satisfactory attendance of 75% or above!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal simulation for sending warning to parents -->
+<div class="modal-overlay hidden" id="alertSentModal">
+    <div class="modal-box">
+        <div class="modal-icon-success">
+            <i class="fa-solid fa-paper-plane"></i>
+        </div>
+        <h3>Parent Notification Dispatched</h3>
+        <p id="alertSentText"></p>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-primary" onclick="closeAlertModal()">Done</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function triggerParentAlert(name, pct, phone) {
+    document.getElementById('alertSentText').innerHTML = 
+        `Official attendance warning notice has been simulated for <strong>${name}</strong> (Attendance: <strong>${pct}</strong>).<br><br>` +
+        `SMS & Email sent to registered contact: <code>${phone}</code> notifying parents to meet the Class Coordinator.`;
+    document.getElementById('alertSentModal').classList.remove('hidden');
+}
+
+function closeAlertModal() {
+    document.getElementById('alertSentModal').classList.add('hidden');
+}
+</script>
+{% endblock %}
