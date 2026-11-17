@@ -15,8 +15,14 @@
                 </div>
             </div>
 
-            <!-- Date Selector form -->
-            <form action="{{ url_for('mark_attendance') }}" method="GET" class="date-picker-form">
+            <!-- Date & Subject Selector form -->
+            <form action="{{ url_for('mark_attendance') }}" method="GET" class="date-picker-form" style="gap: 10px; flex-wrap: wrap;">
+                <label for="subjectSelect"><i class="fa-solid fa-book"></i> Subject:</label>
+                <select id="subjectSelect" name="subject" class="form-control" onchange="this.form.submit()" style="width:auto;">
+                    {% for subj in ['Advanced Python Programming', 'Database Management Systems (SQLite)', 'Linux & Shell Scripting', 'Computer Networks & Security', 'Software Engineering & Project Management'] %}
+                    <option value="{{ subj }}" {% if selected_subject == subj %}selected{% endif %}>{{ subj }}</option>
+                    {% endfor %}
+                </select>
                 <label for="dateSelect"><i class="fa-regular fa-calendar"></i> Lecture Date:</label>
                 <input type="date" id="dateSelect" name="date" value="{{ selected_date }}" class="form-control date-input" onchange="this.form.submit()">
             </form>
@@ -47,6 +53,7 @@
             <!-- Attendance Form -->
             <form action="{{ url_for('mark_attendance') }}" method="POST" id="attendanceForm">
                 <input type="hidden" name="date" value="{{ selected_date }}">
+                <input type="hidden" name="subject" value="{{ selected_subject }}">
 
                 <div class="table-responsive">
                     <table class="data-table attendance-table">

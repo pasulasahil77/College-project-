@@ -1,6 +1,5 @@
 {
-  "name": "SMART ATTENDANCE SYSTEM - TY BSc Computer Science Project",
-  "description": "Smart Attendance System by Sahil Pasula (TYBSC-A-39, Seat No: 24TCS076). Built with HTML, CSS, JavaScript, Python Flask, and SQLite featuring dashboard, attendance marking, reports, and low-attendance warnings.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "name": "Smart Attendance System",
+  "description": "Smart Attendance System - TY BSc Computer Science College Project by Sahil Pasula (TYBSC-A-39, Seat: 24TCS076).",
+  "requestFramePermissions": ["camera"]
 }

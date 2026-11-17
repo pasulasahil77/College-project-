@@ -75,9 +75,18 @@
                         </div>
 
                         <div class="notif-actions-col">
-                            <button type="button" class="btn btn-sm btn-danger" onclick="triggerParentAlert('{{ n['student_name'] }}', '{{ n['percentage'] }}%', '{{ n['phone'] }}')">
-                                <i class="fa-solid fa-paper-plane"></i> Send SMS/Email
-                            </button>
+                            <a href="mailto:{{ n['email'] }}?subject=Attendance%20Shortage%20Alert%20({{ n['percentage'] }}%25)" class="btn btn-sm btn-danger">
+                                <i class="fa-solid fa-envelope"></i> Compose Email
+                            </a>
+                            {% if not n['is_read'] %}
+                            <form action="{{ url_for('mark_notification_read', id=n['id']) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-outline">
+                                    <i class="fa-solid fa-check"></i> Mark Read
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="status-badge badge-present" style="font-size:11px;">Acknowledged</span>
+                            {% endif %}
                             <a href="{{ url_for('view_student', id=n['student_id']) }}" class="btn btn-sm btn-outline">
                                 <i class="fa-solid fa-eye"></i> View History
                             </a>
@@ -91,39 +100,10 @@
                         <i class="fa-solid fa-circle-check fa-3x"></i>
                     </div>
                     <h3>No Attendance Shortages</h3>
-                    <p>All registered students currently maintain satisfactory attendance of 75% or above!</p>
+                    <p>All registered students currently maintain satisfactory attendance!</p>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
-
-<!-- Modal simulation for sending warning to parents -->
-<div class="modal-overlay hidden" id="alertSentModal">
-    <div class="modal-box">
-        <div class="modal-icon-success">
-            <i class="fa-solid fa-paper-plane"></i>
-        </div>
-        <h3>Parent Notification Dispatched</h3>
-        <p id="alertSentText"></p>
-        <div class="modal-actions">
-            <button type="button" class="btn btn-primary" onclick="closeAlertModal()">Done</button>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-function triggerParentAlert(name, pct, phone) {
-    document.getElementById('alertSentText').innerHTML = 
-        `Official attendance warning notice has been simulated for <strong>${name}</strong> (Attendance: <strong>${pct}</strong>).<br><br>` +
-        `SMS & Email sent to registered contact: <code>${phone}</code> notifying parents to meet the Class Coordinator.`;
-    document.getElementById('alertSentModal').classList.remove('hidden');
-}
-
-function closeAlertModal() {
-    document.getElementById('alertSentModal').classList.add('hidden');
-}
-</script>
 {% endblock %}
